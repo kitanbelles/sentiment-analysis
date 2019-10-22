@@ -1,0 +1,33 @@
+min() arg is an empty sequence
+min() arg is an empty sequence
+min() arg is an empty sequence
+min() arg is an empty sequence
+min() arg is an empty sequence
+min() arg is an empty sequence
+min() arg is an empty sequence
+min() arg is an empty sequence
+min() arg is an empty sequence
+min() arg is an empty sequence
+min() arg is an empty sequence
+min() arg is an empty sequence
+min() arg is an empty sequence
+min() arg is an empty sequence
+min() arg is an empty sequence
+min() arg is an empty sequence
+min() arg is an empty sequence
+min() arg is an empty sequence
+min() arg is an empty sequence
+min() arg is an empty sequence
+min() arg is an empty sequence
+min() arg is an empty sequence
+min() arg is an empty sequence
+min() arg is an empty sequence
+min() arg is an empty sequence
+cannot convert input 1570125664469.0 with the unit 'm'
+cannot convert input 1570125672052.0 with the unit 'm'
+cannot cast unit min
+cannot cast unit min
+cannot convert input 1570125737627.0 with the unit 's'
+cannot convert input 1570125795554.0 with the unit 's'
+Execution failed on sql 'SELECT * FROM sentiment WHERE term LIKE ? ORDER BY unix DESC LIMIT 500': no such column: term
+Execution failed on sql 'SELECT * FROM sentiment WHERE term LIKE ? ORDER BY unix DESC LIMIT 500': Not all parameters were used in the SQL statement
