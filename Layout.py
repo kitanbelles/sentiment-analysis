@@ -17,19 +17,22 @@ mydb = mysql.connector.connect(
 )
 mycursor = mydb.cursor()
 
-term = "MondayMotivation"
 df = twitterLive.fetch_initial_tweets()
-temp_df=df.copy()
-plot_df=twitterLive.format_df(temp_df)
+termlist = df.term.unique()
+term = termlist[0]
+plot_df = twitterLive.format_df(df)
 # df = pd.read_sql("SELECT * FROM sentiment WHERE term LIKE %s ORDER BY date DESC LIMIT 500", mydb,
 #                          params=('%' + term + '%',))
 
-print(df.head())
-current_year = df['date'].max().year
+print("Head of plot_df after formatting is : ", plot_df.head())
+print("Head of original df after formatting is : ", df.head())
+print("plot_df shape is: ", plot_df.shape)
+print("original df shape is: ", df.shape)
+current_year = plot_df['date'].max().year
 
 
 
-######################## START Birst Category Layout ########################
+######################## START Line chart Layout ########################
 
 
 sentiment_line_graph_layout = html.Div([
@@ -41,23 +44,23 @@ sentiment_line_graph_layout = html.Div([
             dcc.DatePickerRange(
                 id='my-date-picker-range-birst-category',
                 # with_portal=True,
-                min_date_allowed=dt(2018, 1, 1),
-                max_date_allowed=df['date'].max().to_pydatetime(),
-                initial_visible_month=dt(current_year, df['date'].max().to_pydatetime().month, 1),
-                start_date=(df['date'].max() - timedelta(6)).to_pydatetime(),
-                end_date=df['date'].max().to_pydatetime(),
+                min_date_allowed=(plot_df['date'].min() - timedelta(6)).to_pydatetime(), #dt(2018, 1, 1),
+                max_date_allowed=plot_df['date'].max().to_pydatetime(),
+                initial_visible_month=dt(current_year, plot_df['date'].max().to_pydatetime().month, 1),
+                start_date=(plot_df['date'].min() - timedelta(6)).to_pydatetime(),
+                end_date=plot_df['date'].max().to_pydatetime(),
             ),
             html.Div(id='output-container-date-picker-range-birst-category')
         ], className="row ", style={'marginTop': 30, 'marginBottom': 15}),
         # Header Bar. Value set once, no need for id
         html.Div([
-            html.H6(["Live Twitter Sentiment Analysis on: {}".format(term)], className="gs-header gs-text-header padded", style={'marginTop': 15})
+            html.H6(["Live Twitter Sentiment Analysis on: {}".format(termlist)], className="gs-header gs-text-header padded", style={'marginTop': 15})
         ]),
-        dcc.Input(id='sentiment_term', value='NationalBoyfriendDay', type='text'),
+        dcc.Input(id='sentiment_term', value=term, type='text'),
         dcc.Graph(id='sentiment_live-graph', figure=go.Figure(
             data=[
                 go.Scatter(
-                    x=plot_df.index,
+                    x=plot_df.date,
                     y=plot_df.sentiment,
                     name='Scatter',
                    mode='lines+markers'
@@ -232,7 +235,7 @@ sentiment_line_graph_layout = html.Div([
 #     ], className="subpage")
 # ], className="page")
 
-######################## END Birst Category Layout ########################
+######################## END Line chart Layout ########################
 
 ######################## 404 Page ########################
 noPage = html.Div([

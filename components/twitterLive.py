@@ -32,7 +32,7 @@ except Exception as e:
     Need to crate a generic errorlogger fxn that stores errors in an excel file 
 '''
 
-term ="NationalBoyfriendDay" #senti.return_term()
+#term ="NationalBoyfriendDay" #senti.return_term()
 # print("term is: ", term)
 
 # consumer key, consumer secret, access token, access secret.
@@ -46,8 +46,9 @@ class listener(StreamListener):
     '''
         Class to save tweets in db
     '''
-    def __init__(self):
+    def __init__(self, term):
         self.analyzer = SentimentIntensityAnalyzer()
+        self.term = term
     def on_data(self, data):
         try:
             data = json.loads(data)
@@ -57,11 +58,11 @@ class listener(StreamListener):
             vs = self.analyzer.polarity_scores(tweet)
             sentiment = vs['compound']
             mycursor.execute("INSERT INTO sentiment (date, tweet, sentiment, term) VALUES (%s, %s, %s,%s)",
-                      (time_ms, tweet, sentiment, term))
+                      (time_ms, tweet, sentiment, self.term))
             print("Just inserted the following record: time: {}, tweet: {}, sentiment: {}, term: {}".format(time_ms,
                                                                                                                 tweet,
                                                                                                                 sentiment,
-                                                                                                                term))
+                                                                                                                self.term))
             mydb.commit()
 
         except KeyError as e:
@@ -96,9 +97,39 @@ def format_df(df):
     # df['unix'] /= 1000
     # df['date'] = pd.to_datetime(df['date'])
     df.sort_values('date', inplace=True)
-    df.set_index('date', inplace=True)
-    df = df.resample('5min').mean()
-    df.dropna(subset=['sentiment'], inplace=True)
+    max_d = df['date'].max().to_pydatetime()
+    min_d = df['date'].min().to_pydatetime()
+    diff_date = max_d - min_d
+    diff_d = diff_date.total_seconds()
+    hours = diff_d // 3600
+    days = hours // 24
+    weeks = days // 7
+    months = days // 30
+    years = months // 12
+    if (diff_d <= 600):
+        df = df.resample('30S', on='date').mean()
+    elif (diff_d > 600 and diff_d < 3600):
+        df = df.resample('1min', on='date').mean()
+    elif (hours >= 1 and hours <= 12):
+        df = df.resample('30min', on='date').mean()
+    elif (hours > 12 and hours < 24):
+        df = df.resample('60min', on='date').mean()
+    elif (days >= 1 and days <= 7):
+        df = df.resample('8H', on='date').mean()
+    elif (days > 7 and days < 31):
+        df = df.resample('1D', on='date').mean()
+    elif (months >= 1 and months <= 8):
+        df = df.resample('1W', on='date').mean()
+    elif (months > 8 and months < 24):
+        df = df.resample('1M', on='date').mean()
+    elif (years >= 2 and years <= 10):
+        df = df.resample('1Q', on='date').mean()
+    elif (years > 10):
+        df = df.resample('1Y', on='date').mean()
+    df['date'] = df.index.values
+    # df.set_index('date', inplace=True)
+    # df = df.resample('1min', on='date').mean()
+    #df.dropna(subset=['sentiment'], inplace=True)
     return df
 
 
@@ -122,7 +153,7 @@ def scrape(senti_term):
         try:
             auth = OAuthHandler(ckey, csecret)
             auth.set_access_token(atoken, asecret)
-            twitterStream = Stream(auth, listener())
+            twitterStream = Stream(auth, listener(senti_term))
             twitterStream.filter(track=[str(senti_term)])
         except Exception as e:
             with open('scrapping_errors.txt', 'a') as f:
@@ -133,5 +164,5 @@ def scrape(senti_term):
             time.sleep(5)
 
 
-
+#scrape("mondaymotivation")
 #check_term(term)
