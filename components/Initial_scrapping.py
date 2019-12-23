@@ -7,6 +7,7 @@ from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from unidecode import unidecode
 import mysql.connector
 import pyodbc
+from components import config
 import pandas as pd
 from datetime import datetime
 
@@ -19,8 +20,8 @@ driver= '{ODBC Driver 17 for SQL Server}'
 # "SELECT top 100 * FROM siddy_terms WHERE term LIKE ? ORDER BY date DESC"
 '''
     
-    Initial file to create table sentiment in db and scrape tweets into db for initial graph 
-    Should be run only once ever  
+    Initial file to create table sentiment in mysql db and scrape tweets into db for initial graph 
+    Should be run only once ever and be left running for a while to populate db 
 
 '''
 
@@ -45,10 +46,10 @@ term ="MondayMotivation"
 print("Initial term is: ", term)
 
 # consumer key, consumer secret, access token, access secret.
-ckey = "AeiEWXqrh9TEZpMK6D3JXgYeR"
-csecret = "IA3ACrYMSOZqcOcWOguQBwOsy47VZCEvGLBYauVr0iWbO4Dehr"
-atoken = "381209092-08RQEfpldp6hoZTqCZu2LztCZ6Ub6y1YII1OUkxa"
-asecret = "WkZaxwbeZmmUWOZR7tM5wk2CePTuI4LF9laV04NvayXor"
+ckey = config.ckey
+csecret = config.csecret
+atoken = config.atoken
+asecret = config.asecret
 
 
 def create_table():
