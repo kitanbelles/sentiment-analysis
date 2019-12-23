@@ -6,9 +6,17 @@ import json
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from unidecode import unidecode
 import mysql.connector
+import pyodbc
 import pandas as pd
 from datetime import datetime
 
+server = 'tcp:performancemlsvr.database.windows.net'
+database = 'Sentiments'
+username = 'performancemluser'
+password = 'Pa$$w0rd'
+driver= '{ODBC Driver 17 for SQL Server}'
+
+# "SELECT top 100 * FROM siddy_terms WHERE term LIKE ? ORDER BY date DESC"
 '''
     
     Initial file to create table sentiment in db and scrape tweets into db for initial graph 
@@ -17,7 +25,9 @@ from datetime import datetime
 '''
 
 try:
-
+    cnxn = pyodbc.connect(
+        'DRIVER=' + driver + ';SERVER=' + server + ';PORT=1433;DATABASE=' + database + ';UID=' + username + ';PWD=' + password)
+    cursor = cnxn.cursor()
     mydb = mysql.connector.connect(
       host="localhost",
       user="otaladesuyi",
@@ -31,7 +41,7 @@ except Exception as e:
             f.write('\n')
 
 
-term ="NationalBoyfriendDay"
+term ="MondayMotivation"
 print("Initial term is: ", term)
 
 # consumer key, consumer secret, access token, access secret.

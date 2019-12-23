@@ -2,25 +2,33 @@ import dash_core_components as dcc
 import dash_html_components as html
 import plotly.graph_objs as go
 import dash_table
-from components import Header, printButton, twitterLive
+import sys
+from components import Header, printButton, tweetFetch, config
 from datetime import datetime as dt, timedelta
 #from datetime import date, timedelta
 import pandas as pd
-import mysql.connector
+# import mysql.connector
+import pyodbc
 
 
-mydb = mysql.connector.connect(
-  host="localhost",
-  user="otaladesuyi",
-  passwd="phanmium",
-    database="twitterdb"
-)
-mycursor = mydb.cursor()
+# '''
+#
+#     Initial file to create table sentiment in db and scrape tweets into db for initial graph
+#     Should be run only once ever
+#
+# '''
 
-df = twitterLive.fetch_initial_tweets()
-termlist = df.term.unique()
+
+df_termlist, df = tweetFetch.fetch_initial_tweets()
+if df.empty:
+   sys.exit(1)
+
+print(df.head())
+termlist = df_termlist.Term.unique()
 term = termlist[0]
-plot_df = twitterLive.format_df(df)
+plot_df = tweetFetch.format_df(df)
+donut_values = df['Category'].value_counts()
+labels = ['good', 'neutral', 'bad'] #donut_values.index
 # df = pd.read_sql("SELECT * FROM sentiment WHERE term LIKE %s ORDER BY date DESC LIMIT 500", mydb,
 #                          params=('%' + term + '%',))
 
@@ -28,7 +36,7 @@ print("Head of plot_df after formatting is : ", plot_df.head())
 print("Head of original df after formatting is : ", df.head())
 print("plot_df shape is: ", plot_df.shape)
 print("original df shape is: ", df.shape)
-current_year = plot_df['date'].max().year
+current_year = plot_df['Date'].max().year
 
 
 
@@ -44,30 +52,69 @@ sentiment_line_graph_layout = html.Div([
             dcc.DatePickerRange(
                 id='my-date-picker-range-birst-category',
                 # with_portal=True,
-                min_date_allowed=(plot_df['date'].min() - timedelta(6)).to_pydatetime(), #dt(2018, 1, 1),
-                max_date_allowed=plot_df['date'].max().to_pydatetime(),
-                initial_visible_month=dt(current_year, plot_df['date'].max().to_pydatetime().month, 1),
-                start_date=(plot_df['date'].min() - timedelta(6)).to_pydatetime(),
-                end_date=plot_df['date'].max().to_pydatetime(),
+                min_date_allowed=(plot_df['Date'].min() - timedelta(6)).to_pydatetime(), #dt(2018, 1, 1),
+                max_date_allowed=plot_df['Date'].max().to_pydatetime(),
+                initial_visible_month=dt(current_year, plot_df['Date'].max().to_pydatetime().month, 1),
+                start_date=(plot_df['Date'].min() - timedelta(6)).to_pydatetime(),
+                end_date=plot_df['Date'].max().to_pydatetime(),
             ),
+            html.Div([
+                dcc.Dropdown(
+                    id="terms",
+                    options=[{
+                        'label': i,
+                        'value': i
+                    } for i in termlist],
+                    value='All terms'),
+                ],
+                style={'width': '25%',
+                       'display': 'inline-block'}),
             html.Div(id='output-container-date-picker-range-birst-category')
-        ], className="row ", style={'marginTop': 30, 'marginBottom': 15}),
+        ], className="row ", style={'marginTop': 30, 'marginBottom': 40}),
         # Header Bar. Value set once, no need for id
         html.Div([
-            html.H6(["Live Twitter Sentiment Analysis on: {}".format(termlist)], className="gs-header gs-text-header padded", style={'marginTop': 15})
+            html.H6(["Live Twitter Sentiment Analysis on: {}".format(term)], className="gs-header gs-text-header padded", style={'marginTop': 15})
         ]),
-        dcc.Input(id='sentiment_term', value=term, type='text'),
-        dcc.Graph(id='sentiment_live-graph', figure=go.Figure(
+        html.Div([
+            dcc.Input(id='sentiment_term', value=term, type='text'),
+            dcc.Graph(id='sentiment_live-graph', figure=go.Figure(
+                data=[
+                    go.Scatter(
+                        x=plot_df.Date,
+                        y=plot_df.Sentiment,
+                        name='Scatter',
+                       mode='lines+markers'
+                    )
+                ],
+                layout={
+                'title': 'Tweets Sentiment chart'}
+            ),
+                      )
+            ]),
+        html.Div([
+            # Use `hole` to create a donut-like pie chart
+            dcc.Graph(id='donut-chart', figure=go.Figure(
             data=[
-                go.Scatter(
-                    x=plot_df.date,
-                    y=plot_df.sentiment,
-                    name='Scatter',
-                   mode='lines+markers'
-                )
-            ]
-        ),
-                  )
+                go.Pie(
+                    labels=labels, values=donut_values, hole=.6)
+            ],
+                layout={
+                'title': 'Number of tweets per category'}
+            )
+                      )
+        ]),
+        html.Div([
+            # Use `hole` to create a donut-like pie chart
+            dcc.Graph(id='bar-chart', figure=go.Figure(
+                data=[
+                    go.Bar(
+                        x=donut_values, y=labels, orientation='h')
+                ],
+                layout={
+                'title': 'Top 4 Locations'}
+            )
+                      )
+        ]),
 
     # html.H2('Live Twitter Sentiment'),
     #  dcc.Input(id='sentiment_term', value='NationalBoyfriendDay', type='text'),

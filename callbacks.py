@@ -1,3 +1,4 @@
+import sys
 import dash
 from dash.dependencies import Output, Input
 import dash_core_components as dcc
@@ -6,7 +7,7 @@ import plotly
 import random
 import plotly.graph_objs as go
 from collections import deque
-import mysql.connector as sqlcon
+#import mysql.connector as sqlcon
 from app import app
 import pandas as pd
 from datetime import datetime
@@ -15,7 +16,8 @@ import platform
 import dash_table
 import time
 import flask
-from components import twitterLive as tweet_scrapping
+from components import tweetFetch as tweet_scrapping, config
+import pyodbc
 
 # popular topics: google, olympics, trump, gun, usa, sayhername #sexforgrades
 
@@ -38,33 +40,17 @@ from components import twitterLive as tweet_scrapping
     Fix minor issue with prior_end_date and prior_start_date
 '''
 
+server = config.server
+database = config.database
+username = config.username
+password = config.password
+driver = config.driver
+
 @app.callback(Output('sentiment-live-graph', 'data'),
               [Input(component_id='sentiment_term', component_property='value'),
                Input('my-date-picker-range-birst-category', 'start_date'),
                Input('my-date-picker-range-birst-category', 'end_date')])
-def check_term(term, start_date, end_date):
-    try:
-        mydb = sqlcon.connect(
-            host="localhost",
-            user="otaladesuyi",
-            passwd="phanmium",
-            database="twitterdb"
-        )
-        df = pd.read_sql("SELECT * FROM sentiment WHERE term LIKE %s ORDER BY date DESC LIMIT 500", mydb,
-                         params=('%' + term + '%',))
-        if df.notnull:
-            mydb.close()
-            df = tweet_scrapping.format_df(df)
-            return df
-            # return update_graph_scatter(df)
-        else:
-            tweet_scrapping.scrape(term)
-            # return game graph
-        return df
-    except Exception as e:
-        with open('errors.txt', 'a') as f:
-            f.write(str(e))
-            f.write('\n')
+
 
 
 # Date Picker Callback
